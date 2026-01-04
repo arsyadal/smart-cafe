@@ -114,4 +114,18 @@ public class OrderController {
         List<OrderResponse> orders = orderService.getRecentOrders();
         return ResponseEntity.ok(orders);
     }
+
+    /**
+     * GET /api/orders/customer
+     * Gets orders for a specific customer
+     * 
+     * @param name customer name
+     * @return list of orders
+     */
+    @GetMapping("/customer")
+    public ResponseEntity<List<OrderResponse>> getCustomerOrders(@RequestParam String name) {
+        log.debug("REST request to get orders for customer: {}", name);
+        List<OrderResponse> orders = orderService.getOrdersByCustomer(name);
+        return ResponseEntity.ok(orders);
+    }
 }

@@ -62,4 +62,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      */
     @Query("SELECT o FROM Order o WHERE o.status NOT IN ('COMPLETED', 'CANCELLED') ORDER BY o.orderTime ASC")
     List<Order> findActiveOrders();
+
+    /**
+     * Find orders by customer name, ordered by time descending
+     */
+    List<Order> findByCustomerNameOrderByOrderTimeDesc(String customerName);
 }

@@ -1,5 +1,6 @@
 package com.smartcafe.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -35,6 +36,7 @@ public class OrderItem {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
+    @JsonIgnore
     private Order order;
 
     /**

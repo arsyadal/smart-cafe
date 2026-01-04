@@ -12,6 +12,18 @@
 let stompClient = null;
 let connected = false;
 
+/**
+ * Format number as IDR (Rupiah)
+ */
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount).replace('IDR', 'Rp');
+}
+
 // Audio notification
 const notificationSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2FipONhoaIj4+PjoyJhX95b2VhYWVqdHqAgoSDg4OEg4F+end0cnFxc3d6f4OGiIqLi4qJh4R/end0cXBwc3Z7f4OHio2OjoyKh4N+eHRxb29xdHl+g4iMj5CPjoyJhYB6dXFvb3F1en+EiY2QkI+NioeDfnh0cG9vcnZ7gIWKjZCQj42Kh4J9eHRwb3BydnyBhouOkJCPjYqGgn14dHBvb3J2fIGGi46QkI+NioaCfXh0cHBwc3d8gYaLjpCQj42KhoJ9eHRwcHBydn2BhoyPkJCPjYqGgn14dHBwcHJ2fYKHjI+QkI+NioaCfXh0cHBwc3Z9goeMj5CQj42KhoJ9eHRwcHBydn2Ch4yPkJCPjYqGgn14dHBwcHN3fYKHjI+QkI+NioaCfXh0cHBwcnZ9goeMj5CQj42KhoJ9eHRwcHBydn2Ch4yPkJCPjYqGgn14dHBwcHJ2fXKHjI+QkI==');
 
@@ -206,7 +218,7 @@ function createOrderCardHTML(order) {
             ${order.customerName ? `<p class="mb-2"><strong><i class="bi bi-person"></i> ${order.customerName}</strong></p>` : ''}
             <ul class="order-items">${itemsHTML}</ul>
             <div class="order-total mb-3">
-                <strong>Total: $${order.totalAmount.toFixed(2)}</strong>
+                <strong>Total: ${formatCurrency(order.totalAmount)}</strong>
             </div>
             <div class="order-actions">${actionsHTML}</div>
         </div>

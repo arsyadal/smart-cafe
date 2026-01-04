@@ -56,4 +56,13 @@ public class WebController {
         model.addAttribute("lowStockProducts", productService.getLowStockProducts(10));
         return "admin";
     }
+
+    /**
+     * GET /login
+     * Login page for user authentication
+     */
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login";
+    }
 }

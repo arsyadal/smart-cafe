@@ -1,7 +1,12 @@
 package com.smartcafe.config;
 
+import com.smartcafe.service.CustomUserDetailsService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -11,21 +16,20 @@ import org.springframework.security.web.SecurityFilterChain;
 /**
  * SecurityConfig - Spring Security Configuration
  * 
- * For this demo application, security is configured permissively
- * to allow easy testing. In production, you would want to:
- * - Require authentication for admin/kitchen endpoints
- * - Protect API endpoints with JWT or session-based auth
- * - Enable CSRF protection
+ * Configures form-based authentication with:
+ * - Custom login page
+ * - Protected routes for admin and kitchen
+ * - Database-backed user authentication
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final CustomUserDetailsService userDetailsService;
+
     /**
-     * Configure HTTP security
-     * 
-     * Current setup: All endpoints are publicly accessible
-     * This is for demonstration purposes only!
+     * Configure HTTP security with form-based login
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -35,14 +39,53 @@ public class SecurityConfig {
 
                 // Configure authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        // Allow all requests (permissive for demo)
-                        .anyRequest().permitAll())
+                        // Public access
+                        .requestMatchers("/", "/login", "/css/**", "/js/**", "/images/**", "/api/**", "/ws/**")
+                        .permitAll()
+                        // Protected routes require authentication
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/kitchen/**").hasAnyRole("ADMIN", "STAFF")
+                        .anyRequest().authenticated())
+
+                // Form-based login configuration
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/", true)
+                        .failureUrl("/login?error=true")
+                        .permitAll())
+
+                // Logout configuration
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout=true")
+                        .deleteCookies("JSESSIONID")
+                        .permitAll())
 
                 // Disable frame options for H2 Console (if used)
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();
+    }
+
+    /**
+     * Authentication provider using custom UserDetailsService
+     */
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+    /**
+     * Authentication manager bean
+     */
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 
     /**

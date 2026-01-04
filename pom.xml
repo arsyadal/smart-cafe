@@ -99,6 +99,12 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Xendit Java SDK -->
+        <dependency>
+            <groupId>com.xendit</groupId>
+            <artifactId>xendit-java-lib</artifactId>
+            <version>1.23.0</version>
+        </dependency>
     </dependencies>
     
     <build>

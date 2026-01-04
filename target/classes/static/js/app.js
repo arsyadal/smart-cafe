@@ -17,8 +17,28 @@ let cart = [];
 document.addEventListener('DOMContentLoaded', function () {
     console.log('Smart Cafe Menu initialized');
     loadCartFromStorage();
+    loadCustomerName();
     renderCart();
 });
+
+function loadCustomerName() {
+    const savedName = localStorage.getItem('smartCafeCustomerName');
+    if (savedName) {
+        const input = document.getElementById('customer-name');
+        if (input) input.value = savedName;
+    }
+}
+
+/**
+ * Add to cart from button click (reads data attributes)
+ * @param {HTMLElement} button - The clicked button element
+ */
+function addToCartFromButton(button) {
+    const productId = parseInt(button.dataset.id);
+    const name = button.dataset.name;
+    const price = parseFloat(button.dataset.price);
+    addToCart(productId, name, price);
+}
 
 /**
  * Add a product to the cart
@@ -100,6 +120,20 @@ function getCartCount() {
 }
 
 /**
+ * Format number as IDR (Rupiah)
+ * @param {number} amount 
+ * @returns {string} Formatted string
+ */
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount).replace('IDR', 'Rp');
+}
+
+/**
  * Render the cart UI
  */
 function renderCart() {
@@ -130,7 +164,7 @@ function renderCart() {
             <div class="cart-item" data-id="${item.productId}">
                 <div class="cart-item-info">
                     <div class="cart-item-name">${item.name}</div>
-                    <div class="cart-item-price">$${(item.price * item.quantity).toFixed(2)}</div>
+                    <div class="cart-item-price">${formatCurrency(item.price * item.quantity)}</div>
                 </div>
                 <div class="cart-item-qty">
                     <button class="qty-btn" onclick="updateQuantity(${item.productId}, -1)">−</button>
@@ -144,7 +178,7 @@ function renderCart() {
 
     // Update total
     if (cartTotal) {
-        cartTotal.textContent = `$${getCartTotal().toFixed(2)}`;
+        cartTotal.textContent = formatCurrency(getCartTotal());
     }
 }
 
@@ -159,6 +193,12 @@ async function checkout() {
 
     const checkoutBtn = document.getElementById('checkout-btn');
     const customerName = document.getElementById('customer-name')?.value || 'Guest';
+    const paymentMethod = document.getElementById('payment-method')?.value || 'CASH';
+
+    // Save name to localStorage for future history lookups
+    if (customerName !== 'Guest') {
+        localStorage.setItem('smartCafeCustomerName', customerName);
+    }
 
     // Disable button and show loading
     checkoutBtn.disabled = true;
@@ -178,9 +218,7 @@ async function checkout() {
     try {
         const response = await fetch('/api/orders', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(orderData)
         });
 
@@ -191,24 +229,74 @@ async function checkout() {
 
         const order = await response.json();
 
-        // Clear cart
-        cart = [];
-        saveCartToStorage();
-        renderCart();
+        // If not cash, process payment via Xendit
+        if (paymentMethod !== 'CASH') {
+            checkoutBtn.innerHTML = '<span class="loading-spinner"></span> Opening Payment...';
 
-        // Show success message
-        showToast(`Order #${order.id} placed successfully!`, 'success');
+            // 1. Get Xendit Invoice from Backend
+            const xenditResponse = await fetch(`/api/payments/xendit-invoice?orderId=${order.id}`);
+            if (!xenditResponse.ok) throw new Error('Failed to initialize payment gateway');
+            const { invoiceUrl } = await xenditResponse.json();
 
-        // Optional: Show order confirmation modal
-        showOrderConfirmation(order);
+            // 2. Open Xendit Invoice in new window
+            window.open(invoiceUrl, '_blank');
+            showToast('Please complete payment in the new window', 'info');
+            orderComplete(order);
+        } else {
+            // Cash payment
+            orderComplete(order);
+        }
 
     } catch (error) {
-        console.error('Order failed:', error);
-        showToast(error.message || 'Failed to place order', 'error');
+        console.error('Checkout error:', error);
+        showToast(error.message, 'error');
     } finally {
-        checkoutBtn.disabled = false;
         checkoutBtn.innerHTML = '<i class="bi bi-bag-check"></i> Place Order';
+        checkoutBtn.disabled = false;
     }
+}
+
+/**
+ * Common logic after order/payment is initiated
+ */
+function orderComplete(order) {
+    // Clear cart
+    cart = [];
+    saveCartToStorage();
+    renderCart();
+
+    // Show success message
+    showToast(`Order #${order.id} placed successfully!`, 'success');
+
+    // Show confirmation modal
+    showOrderConfirmation(order);
+}
+
+/**
+ * Handle simulated payment
+ * @param {number} orderId 
+ * @param {string} method 
+ * @param {number} amount 
+ */
+async function processPayment(orderId, method, amount) {
+    // Artificial delay to simulate real payment processing
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            orderId: orderId,
+            method: method,
+            amount: amount
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error('Payment failed. Please try again or pay with Cash.');
+    }
+
+    return await response.json();
 }
 
 /**
@@ -229,7 +317,7 @@ function showOrderConfirmation(order) {
                     <h3 class="mb-3">Order Confirmed!</h3>
                     <p class="text-muted mb-3">Your order number is</p>
                     <h1 class="text-primary mb-4">#${order.id}</h1>
-                    <p class="text-muted">Total: $${order.totalAmount.toFixed(2)}</p>
+                    <p class="text-muted">Total: ${formatCurrency(order.totalAmount)}</p>
                     <button class="btn btn-primary btn-lg mt-3" onclick="closeConfirmation()">
                         <i class="bi bi-house"></i> Continue Shopping
                     </button>
@@ -321,15 +409,96 @@ function filterProducts(category) {
 
     cards.forEach(card => {
         const cardType = card.dataset.type?.toLowerCase();
+        // Use selector that matches Bootstrap column classes (col-sm-6, col-md-4, etc.)
+        const column = card.closest('[class*="col"]');
 
         if (category === 'all') {
-            card.closest('.col').style.display = '';
+            if (column) column.style.display = '';
         } else if (cardType === category) {
-            card.closest('.col').style.display = '';
+            if (column) column.style.display = '';
         } else {
-            card.closest('.col').style.display = 'none';
+            if (column) column.style.display = 'none';
         }
     });
+}
+
+/**
+ * Open history modal and load data
+ */
+async function openHistoryModal() {
+    const customerName = document.getElementById('customer-name')?.value || localStorage.getItem('smartCafeCustomerName');
+
+    if (!customerName) {
+        showToast('Please enter your name in the cart sidebar first to view your history', 'info');
+        return;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+    modal.show();
+
+    loadOrderHistory(customerName);
+}
+
+/**
+ * Load order history for a customer
+ * @param {string} name 
+ */
+async function loadOrderHistory(name) {
+    const container = document.getElementById('history-content');
+    if (!container) return;
+
+    try {
+        const response = await fetch(`/api/orders/customer?name=${encodeURIComponent(name)}`);
+        if (!response.ok) throw new Error('Failed to fetch history');
+        const orders = await response.json();
+
+        if (orders.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-clock-history text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-3 text-muted">No orders found for "${name}"</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th>Items</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${orders.map(order => `
+                            <tr>
+                                <td class="fw-bold">#${order.id}</td>
+                                <td class="small text-muted">${new Date(order.orderTime).toLocaleString()}</td>
+                                <td>
+                                    <span class="badge status-${order.status.toLowerCase()}">${order.status}</span>
+                                </td>
+                                <td class="fw-bold">${formatCurrency(order.totalAmount)}</td>
+                                <td class="small">
+                                    ${order.items.map(item => `${item.quantity}x ${item.productName}`).join(', ')}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (error) {
+        container.innerHTML = `
+            <div class="alert alert-danger m-3">
+                <i class="bi bi-exclamation-triangle-fill"></i> Failed to load history.
+            </div>
+        `;
+    }
 }
 
 // Add slideOutRight animation
@@ -339,5 +508,11 @@ style.textContent = `
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
     }
+    
+    .status-pending { background: #ffc107; color: #000; }
+    .status-preparing { background: #17a2b8; color: white; }
+    .status-ready { background: #28a745; color: white; }
+    .status-completed { background: #6c757d; color: white; }
+    .status-cancelled { background: #dc3545; color: white; }
 `;
 document.head.appendChild(style);

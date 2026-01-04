@@ -65,6 +65,13 @@ public class Order {
     private String notes;
 
     /**
+     * Relationship with Payment
+     */
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "payment_id", referencedColumnName = "id")
+    private Payment payment;
+
+    /**
      * One-to-Many relationship with OrderItem
      * CascadeType.ALL: Changes to Order cascade to OrderItems
      * orphanRemoval: Remove items from DB when removed from list

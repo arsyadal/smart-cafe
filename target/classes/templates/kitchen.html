@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
     <meta charset="UTF-8">
@@ -86,13 +86,21 @@
                     <h1><i class="bi bi-fire me-2"></i>Kitchen Dashboard</h1>
                     <p class="mb-0 opacity-75">Real-time order management</p>
                 </div>
-                <div>
-                    <a href="/" class="btn btn-outline-light me-2">
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/" class="btn btn-outline-light">
                         <i class="bi bi-house"></i> Menu
+                    </a>
+                    <a href="/admin" class="btn btn-outline-light" sec:authorize="hasRole('ADMIN')">
+                        <i class="bi bi-gear"></i> Admin
                     </a>
                     <button class="btn btn-light" onclick="loadActiveOrders()">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
+                    <form th:action="@{/logout}" method="post" class="ms-2">
+                        <button type="submit" class="btn btn-danger btn-sm px-3">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -148,8 +156,9 @@
                         </li>
                     </ul>
                     <div class="order-total mb-3">
-                        <strong th:text="'Total: $' + ${#numbers.formatDecimal(order.totalAmount, 1, 2)}">Total:
-                            $0.00</strong>
+                        <strong
+                            th:text="'Total: Rp ' + ${#numbers.formatDecimal(order.totalAmount, 1, 'POINT', 0, 'COMMA')}">Total:
+                            Rp 0</strong>
                     </div>
                     <div class="order-actions">
                         <!-- Pending -> Preparing -->

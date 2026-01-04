@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Smart Cafe</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-gradient-start: #0f172a;
+            --bg-gradient-end: #1e293b;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            color: var(--text-primary);
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 48px 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-color), #8b5cf6);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .login-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .input-icon {
+            position: relative;
+        }
+
+        .input-icon i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .input-icon .form-control {
+            padding-left: 48px;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary-color), #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 28px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .alert {
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+
+        .alert i {
+            font-size: 1.2rem;
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .login-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .login-footer a:hover {
+            color: #8b5cf6;
+        }
+
+        .demo-credentials {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            font-size: 0.85rem;
+        }
+
+        .demo-credentials h4 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .demo-credentials code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--text-primary);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-card {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="bi bi-cup-hot-fill"></i>
+                </div>
+                <h1>Smart Cafe</h1>
+                <p>Sign in to access the dashboard</p>
+            </div>
+
+            <!-- Error Message -->
+            <div th:if="${param.error}" class="alert alert-danger">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <span>Invalid username or password. Please try again.</span>
+            </div>
+
+            <!-- Logout Message -->
+            <div th:if="${param.logout}" class="alert alert-success">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>You have been logged out successfully.</span>
+            </div>
+
+            <!-- Demo Credentials -->
+            <div class="demo-credentials">
+                <h4><i class="bi bi-info-circle me-1"></i> Demo Credentials</h4>
+                <div class="mb-1">Admin: <code>admin</code> / <code>admin123</code></div>
+                <div>Staff: <code>staff</code> / <code>staff123</code></div>
+            </div>
+
+            <!-- Login Form -->
+            <form th:action="@{/login}" method="post">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <div class="input-icon">
+                        <i class="bi bi-person"></i>
+                        <input type="text" name="username" class="form-control" placeholder="Enter your username"
+                            required autofocus>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="input-icon">
+                        <i class="bi bi-lock"></i>
+                        <input type="password" name="password" class="form-control" placeholder="Enter your password"
+                            required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Sign In
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <a href="/">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Menu
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

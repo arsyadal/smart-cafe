@@ -168,6 +168,19 @@ public class OrderService {
     }
 
     /**
+     * Get orders for a specific customer
+     * 
+     * @param customerName the customer name
+     * @return list of order responses
+     */
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getOrdersByCustomer(String customerName) {
+        return orderRepository.findByCustomerNameOrderByOrderTimeDesc(customerName).stream()
+                .map(OrderResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Broadcast order to kitchen dashboard via WebSocket
      * 
      * @param orderResponse the order to broadcast
