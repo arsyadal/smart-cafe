@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Cafe - Admin Dashboard</title>
+    <meta name="description" content="Admin dashboard for Smart Cafe management">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-cup-hot-fill me-2"></i>Smart Cafe
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="bi bi-house"></i> Menu</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/kitchen"><i class="bi bi-fire"></i> Kitchen</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/admin"><i class="bi bi-gear"></i> Admin</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i class="bi bi-speedometer2"></i> Admin Dashboard</h1>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container py-4">
+        <!-- Stats Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-cash-coin text-success" style="font-size: 3rem;"></i>
+                        </div>
+                        <h3 class="text-success" th:text="'$' + ${#numbers.formatDecimal(todayRevenue, 1, 2)}">$0.00
+                        </h3>
+                        <p class="text-muted mb-0">Today's Revenue</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-box-seam text-primary" style="font-size: 3rem;"></i>
+                        </div>
+                        <h3 class="text-primary" th:text="${#lists.size(products)}">0</h3>
+                        <p class="text-muted mb-0">Total Products</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                        </div>
+                        <h3 class="text-warning" th:text="${#lists.size(lowStockProducts)}">0</h3>
+                        <p class="text-muted mb-0">Low Stock Items</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Recent Orders -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0"><i class="bi bi-receipt me-2"></i>Recent Orders</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Customer</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="order : ${recentOrders}">
+                                        <td th:text="${order.id}">#1</td>
+                                        <td th:text="${order.customerName ?: 'Guest'}">Guest</td>
+                                        <td th:text="${order.totalItemCount}">0</td>
+                                        <td th:text="'$' + ${#numbers.formatDecimal(order.totalAmount, 1, 2)}">$0.00
+                                        </td>
+                                        <td>
+                                            <span class="badge"
+                                                th:classappend="'status-' + ${order.status.name().toLowerCase()}"
+                                                th:text="${order.status}">PENDING</span>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(recentOrders)}">
+                                        <td colspan="5" class="text-center text-muted py-4">No recent orders</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Low Stock Products -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2 text-warning"></i>Low Stock Alert
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Type</th>
+                                        <th>Stock</th>
+                                        <th>Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="product : ${lowStockProducts}">
+                                        <td th:text="${product.name}">Product</td>
+                                        <td>
+                                            <span class="badge"
+                                                th:classappend="${product.productType == 'FOOD'} ? 'badge-food' : 'badge-drink'"
+                                                th:text="${product.productType}">FOOD</span>
+                                        </td>
+                                        <td>
+                                            <span class="text-danger fw-bold" th:text="${product.stock}">0</span>
+                                        </td>
+                                        <td th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(lowStockProducts)}">
+                                        <td colspan="4" class="text-center text-success py-4">
+                                            <i class="bi bi-check-circle me-2"></i>All products are well stocked!
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- All Products -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="mb-0"><i class="bi bi-box-seam me-2"></i>All Products</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Price</th>
+                                <th>Stock</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="product : ${products}">
+                                <td th:text="${product.id}">#1</td>
+                                <td>
+                                    <strong th:text="${product.name}">Product</strong>
+                                    <br>
+                                    <small class="text-muted" th:text="${product.description}">Description</small>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                        th:classappend="${product.productType == 'FOOD'} ? 'badge-food' : 'badge-drink'"
+                                        th:text="${product.productType}">FOOD</span>
+                                </td>
+                                <td th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</td>
+                                <td>
+                                    <span th:class="${product.stock < 10} ? 'text-danger fw-bold' : ''"
+                                        th:text="${product.stock}">0</span>
+                                </td>
+                                <td>
+                                    <span th:if="${product.available}" class="badge bg-success">Active</span>
+                                    <span th:unless="${product.available}" class="badge bg-secondary">Inactive</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="mb-1">
+                <i class="bi bi-cup-hot-fill"></i> Smart Cafe System
+            </p>
+            <p class="small text-muted mb-0">
+                Built with Spring Boot, Thymeleaf & Bootstrap 5
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

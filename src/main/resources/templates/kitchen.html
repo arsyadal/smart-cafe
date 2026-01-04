@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Cafe - Kitchen Dashboard</title>
+    <meta name="description" content="Real-time kitchen order management dashboard">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+
+    <style>
+        body {
+            background: #1a1a2e;
+        }
+
+        .kitchen-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.25rem;
+            flex: 1;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .stat-card p {
+            margin: 0;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .stat-pending {
+            border-left: 4px solid #ffc107;
+        }
+
+        .stat-preparing {
+            border-left: 4px solid #17a2b8;
+        }
+
+        .stat-ready {
+            border-left: 4px solid #28a745;
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Kitchen Header -->
+    <header class="kitchen-header">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1><i class="bi bi-fire me-2"></i>Kitchen Dashboard</h1>
+                    <p class="mb-0 opacity-75">Real-time order management</p>
+                </div>
+                <div>
+                    <a href="/" class="btn btn-outline-light me-2">
+                        <i class="bi bi-house"></i> Menu
+                    </a>
+                    <button class="btn btn-light" onclick="loadActiveOrders()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="kitchen-container">
+        <!-- Statistics -->
+        <div class="kitchen-stats" id="stats-container">
+            <div class="stat-card stat-pending">
+                <h3 id="pending-count" th:text="${#lists.size(activeOrders.?[status.name() == 'PENDING'])}">0</h3>
+                <p><i class="bi bi-hourglass-split"></i> Pending</p>
+            </div>
+            <div class="stat-card stat-preparing">
+                <h3 id="preparing-count" th:text="${#lists.size(activeOrders.?[status.name() == 'PREPARING'])}">0</h3>
+                <p><i class="bi bi-fire"></i> Preparing</p>
+            </div>
+            <div class="stat-card stat-ready">
+                <h3 id="ready-count" th:text="${#lists.size(activeOrders.?[status.name() == 'READY'])}">0</h3>
+                <p><i class="bi bi-check-circle"></i> Ready</p>
+            </div>
+        </div>
+
+        <!-- Orders Grid -->
+        <div class="orders-grid" id="orders-container">
+            <!-- Orders will be rendered by JavaScript -->
+            <div th:each="order : ${activeOrders}" class="order-card" th:data-order-id="${order.id}">
+                <div class="order-header">
+                    <div>
+                        <div class="order-number" th:text="'Order #' + ${order.id}">Order #1</div>
+                        <div class="order-time">
+                            <i class="bi bi-clock"></i>
+                            <span th:text="${#temporals.format(order.orderTime, 'HH:mm')}">12:00</span>
+                        </div>
+                    </div>
+                    <span class="order-status" th:classappend="'status-' + ${order.status.name().toLowerCase()}"
+                        th:text="${order.status}">PENDING</span>
+                </div>
+                <div class="order-body">
+                    <p th:if="${order.customerName}" class="mb-2">
+                        <strong><i class="bi bi-person"></i> <span
+                                th:text="${order.customerName}">Customer</span></strong>
+                    </p>
+                    <ul class="order-items">
+                        <li th:each="item : ${order.items}">
+                            <span>
+                                <span class="item-qty" th:text="${item.quantity} + 'x'">1x</span>
+                                <span th:text="${item.productName}">Product</span>
+                                <small th:if="${item.specialRequests}" class="text-muted"
+                                    th:text="'(' + ${item.specialRequests} + ')'">(notes)</small>
+                            </span>
+                            <span class="badge bg-secondary" th:text="${item.productType}">FOOD</span>
+                        </li>
+                    </ul>
+                    <div class="order-total mb-3">
+                        <strong th:text="'Total: $' + ${#numbers.formatDecimal(order.totalAmount, 1, 2)}">Total:
+                            $0.00</strong>
+                    </div>
+                    <div class="order-actions">
+                        <!-- Pending -> Preparing -->
+                        <button th:if="${order.status.name() == 'PENDING'}" class="btn-status btn-preparing"
+                            th:onclick="'updateStatus(' + ${order.id} + ', \'PREPARING\')'">
+                            <i class="bi bi-fire"></i> Start Preparing
+                        </button>
+                        <!-- Preparing -> Ready -->
+                        <button th:if="${order.status.name() == 'PREPARING'}" class="btn-status btn-ready"
+                            th:onclick="'updateStatus(' + ${order.id} + ', \'READY\')'">
+                            <i class="bi bi-check-circle"></i> Mark Ready
+                        </button>
+                        <!-- Ready -> Completed -->
+                        <button th:if="${order.status.name() == 'READY'}" class="btn-status btn-complete"
+                            th:onclick="'updateStatus(' + ${order.id} + ', \'COMPLETED\')'">
+                            <i class="bi bi-bag-check"></i> Complete
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${#lists.isEmpty(activeOrders)}" class="text-center py-5 text-white">
+                <i class="bi bi-inbox" style="font-size: 4rem; opacity: 0.5;"></i>
+                <p class="mt-3 opacity-75">No active orders</p>
+                <p class="opacity-50">New orders will appear here automatically</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Connection Status -->
+    <div id="connection-status" class="connection-status disconnected">
+        <span class="status-dot"></span>
+        Connecting...
+    </div>
+
+    <!-- SockJS and STOMP -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Kitchen JavaScript -->
+    <script th:src="@{/js/kitchen.js}"></script>
+</body>
+
+</html>
